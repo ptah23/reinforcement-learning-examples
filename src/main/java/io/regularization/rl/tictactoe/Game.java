@@ -22,8 +22,6 @@ public class Game {
                 currentPlayer = p1;
             }
 
-
-
             // current player makes a move
             currentPlayer.takeAction(environment);
 
@@ -33,10 +31,7 @@ public class Game {
             p2.updateStateHistory(state);
             // draw the board before the user who wants to see it makes a move
             if (draw) {
-
                 environment.drawBoard();
-
-
             }
 
         }

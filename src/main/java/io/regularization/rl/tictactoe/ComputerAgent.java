@@ -85,7 +85,7 @@ public class ComputerAgent implements Agent {
         double target = reward;
         for(int i = stateHistory.size()-1; i >=0; i--) {
             int previous = stateHistory.get(i);
-            double value = V.get(previous) + alpha * (target - previous);
+            double value = V.get(previous) + alpha * (target - V.get(previous));
             V.put(previous, value);
             target = value;
         }
