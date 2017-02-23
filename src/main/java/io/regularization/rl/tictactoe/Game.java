@@ -35,7 +35,7 @@ public class Game {
             }
 
         }
-        System.out.println("winner:" + environment.getWinner());
+       // System.out.println("winner:" + environment.getWinner());
             // do the value function update
             p1.update(environment);
             p2.update(environment);
@@ -55,7 +55,7 @@ public class Game {
 
         p1.initialiseV(stateWinner);
         p2.initialiseV(stateWinner);
-        int T = 10000;
+        int T = 100000;
         for (int t = 0; t < T; t++) {
             if (t % 200 == 0) {
                 System.out.println(t);
