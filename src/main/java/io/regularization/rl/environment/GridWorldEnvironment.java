@@ -4,7 +4,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static io.regularization.rl.environment.GridWorldAction.*;
 
@@ -22,32 +25,6 @@ public class GridWorldEnvironment {
         this.width = width;
         this.height = height;
         currentPosition = startPosition;
-    }
-
-    public boolean isTerminal(GridWorldPosition position) {
-        return !actions.containsKey(position);
-    }
-
-    public GridWorldReward move(GridWorldAction action) {
-        if (actions.get(currentPosition).contains(action)) {
-            currentPosition = action.perform(currentPosition);
-        }
-        return rewards.get(currentPosition) != null ? rewards.get(currentPosition) : new GridWorldReward(0.0f);
-    }
-
-    public GridWorldReward undoMove(GridWorldAction action) {
-        currentPosition = action.undo(currentPosition);
-        assert (allStates().contains(currentPosition));
-        return rewards.get(currentPosition);
-    }
-
-    public Set<GridWorldPosition> allStates() {
-        Set<GridWorldPosition> returnValue = Sets.union(rewards.keySet(), actions.keySet());
-        return returnValue;
-    }
-
-    public boolean gameOver() {
-        return !actions.containsKey(currentPosition);
     }
 
     public static GridWorldEnvironment standardGrid() {
@@ -76,7 +53,7 @@ public class GridWorldEnvironment {
         return returnValue;
     }
 
-    public GridWorldEnvironment negativeGrid() {
+    public static GridWorldEnvironment negativeGrid() {
         float stepCost = -0.1f;
 
         GridWorldEnvironment returnValue = standardGrid();
@@ -96,20 +73,38 @@ public class GridWorldEnvironment {
         return returnValue;
     }
 
-    public void setCurrentPosition(GridWorldPosition currentPosition) {
-        this.currentPosition = currentPosition;
+    public boolean isTerminal(GridWorldPosition position) {
+        return !actions.containsKey(position);
+    }
+
+    public GridWorldReward move(GridWorldAction action) {
+        if (actions.get(currentPosition).contains(action)) {
+            currentPosition = action.perform(currentPosition);
+        }
+        return rewards.get(currentPosition) != null ? rewards.get(currentPosition) : new GridWorldReward(0.0f);
+    }
+
+    public GridWorldReward undoMove(GridWorldAction action) {
+        currentPosition = action.undo(currentPosition);
+        assert (allStates().contains(currentPosition));
+        return rewards.get(currentPosition);
+    }
+
+    public Set<GridWorldPosition> allStates() {
+        Set<GridWorldPosition> returnValue = Sets.union(rewards.keySet(), actions.keySet());
+        return returnValue;
+    }
+
+    public boolean gameOver() {
+        return !actions.containsKey(currentPosition);
     }
 
     public GridWorldPosition getCurrentPosition() {
         return currentPosition;
     }
 
-    public void setRewards(Map<GridWorldPosition, GridWorldReward> rewards) {
-        this.rewards = rewards;
-    }
-
-    public void setActions(Map<GridWorldPosition, List<GridWorldAction>> actions) {
-        this.actions = actions;
+    public void setCurrentPosition(GridWorldPosition currentPosition) {
+        this.currentPosition = currentPosition;
     }
 
     public int getWidth() {
@@ -122,5 +117,17 @@ public class GridWorldEnvironment {
 
     public Map<GridWorldPosition,List<GridWorldAction>> getActions() {
         return actions;
+    }
+
+    public void setActions(Map<GridWorldPosition, List<GridWorldAction>> actions) {
+        this.actions = actions;
+    }
+
+    public Map<GridWorldPosition, GridWorldReward> getRewards() {
+        return rewards;
+    }
+
+    public void setRewards(Map<GridWorldPosition, GridWorldReward> rewards) {
+        this.rewards = rewards;
     }
 }

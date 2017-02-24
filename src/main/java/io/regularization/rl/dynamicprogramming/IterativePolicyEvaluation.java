@@ -8,7 +8,7 @@ import io.regularization.rl.environment.GridWorldPosition;
 import io.regularization.rl.environment.GridWorldReward;
 
 import java.util.Map;
-import java.util.Set;
+import java.util.Random;
 
 import static io.regularization.rl.environment.GridWorldAction.RIGHT;
 import static io.regularization.rl.environment.GridWorldAction.UP;
@@ -17,13 +17,14 @@ import static io.regularization.rl.environment.GridWorldAction.UP;
  * Created by ptah on 23/02/2017.
  */
 public class IterativePolicyEvaluation {
-    private static float SMALL_ENOUGH = 10e-4f;
+    private static float SMALL_ENOUGH = 10e-4f, GAMMA = 0.9f;
+    private static Random random = new Random();
 
-    public static void printValues(Map<GridWorldPosition, Float> V, GridWorldEnvironment grid) {
+    public static void printValues(Map<GridWorldPosition, GridWorldReward> V, GridWorldEnvironment grid) {
         for (int i = 0; i < grid.getWidth(); i++) {
             System.out.println("---------------------------");
             for (int j = 0; j < grid.getHeight(); j++) {
-                double v = V.get(new GridWorldPosition(i, j)) != null ? V.get(new GridWorldPosition(i, j)) : 0;
+                double v = V.get(new GridWorldPosition(i, j)) != null ? V.get(new GridWorldPosition(i, j)).getValue() : 0;
                 if (v >= 0) {
                     System.out.printf(" %.2f|", v);
                 } else {
@@ -50,7 +51,7 @@ public class IterativePolicyEvaluation {
     public static void main(String args[]) {
         GridWorldEnvironment grid = GridWorldEnvironment.standardGrid();
 
-        Map<GridWorldPosition, Float> V = valueFunctionForRandomPolicy(grid);
+        Map<GridWorldPosition, GridWorldReward> V = valueFunctionForRandomPolicy(grid);
         System.out.println("values for uniformly random actions:");
         printValues(V, grid);
         Map<GridWorldPosition, GridWorldAction> policy = ImmutableMap.<GridWorldPosition, GridWorldAction>builder()
@@ -64,24 +65,24 @@ public class IterativePolicyEvaluation {
                 .put(new GridWorldPosition(2, 2), RIGHT)
                 .put(new GridWorldPosition(2, 3), UP).build();
         printPolicy(policy, grid);
-        V = valueFunctionForFixedPolicy(grid,policy);
+        V = valueFunctionForFixedPolicy(grid, policy, GAMMA);
         printValues(V, grid);
 
     }
 
-    private static Map<GridWorldPosition, Float> initialiseV(Set<GridWorldPosition> states) {
-        Map<GridWorldPosition, Float> V = Maps.newHashMap();
-        states.stream().forEach(state -> V.put(state, 0.0f));
+    private static Map<GridWorldPosition, GridWorldReward> initialiseV(GridWorldEnvironment grid) {
+        Map<GridWorldPosition, GridWorldReward> V = Maps.newHashMap();
+        grid.allStates().stream().forEach(state -> V.put(state, new GridWorldReward(grid.getActions().containsKey(state) ? random.nextFloat() : 0.0f)));
         return V;
     }
 
-    private static Map<GridWorldPosition, Float> valueFunctionForRandomPolicy(GridWorldEnvironment grid) {
+    public static Map<GridWorldPosition, GridWorldReward> valueFunctionForRandomPolicy(GridWorldEnvironment grid) {
         float gamma = 1.0f;
-        Map<GridWorldPosition, Float> V = initialiseV(grid.allStates());
+        Map<GridWorldPosition, GridWorldReward> V = initialiseV(grid);
         while (true) {
             float biggestChange = 0;
             for (GridWorldPosition state : grid.allStates()) {
-                float oldV = V.get(state);
+                float oldV = V.get(state).getValue();
 
                 // V(state) only has value if it's not a terminal state
                 if (grid.getActions().containsKey(state)) {
@@ -92,10 +93,10 @@ public class IterativePolicyEvaluation {
                         grid.setCurrentPosition(state);
                         GridWorldReward r = grid.move(action);
                         System.out.println("currentposition:" + grid.getCurrentPosition() + ", action:" + action + ", reward:" + r);
-                        newV += pA * (r.getValue() + gamma * V.get(grid.getCurrentPosition()));
+                        newV += pA * (r.getValue() + gamma * V.get(grid.getCurrentPosition()).getValue());
                     }
-                    V.put(state, newV);
-                    biggestChange = Math.max(biggestChange, Math.abs(oldV - V.get(state)));
+                    V.put(state, new GridWorldReward(newV));
+                    biggestChange = Math.max(biggestChange, Math.abs(oldV - V.get(state).getValue()));
                 }
             }
             if (biggestChange < SMALL_ENOUGH) {
@@ -105,21 +106,21 @@ public class IterativePolicyEvaluation {
         return V;
     }
 
-    private static Map<GridWorldPosition, Float> valueFunctionForFixedPolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy) {
-        float gamma = 0.9f;
-        Map<GridWorldPosition, Float> V = initialiseV(grid.allStates());
+    public static Map<GridWorldPosition, GridWorldReward> valueFunctionForFixedPolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy, float gamma) {
+
+        Map<GridWorldPosition, GridWorldReward> V = initialiseV(grid);
         while (true) {
             float biggestChange = 0;
             for (GridWorldPosition state : grid.allStates()) {
-                float oldV = V.get(state);
+                float oldV = V.get(state).getValue();
 
                 // V(state) only has value if it's not a terminal state
                 if (policy.containsKey(state)) {
                     GridWorldAction action = policy.get(state);
                     grid.setCurrentPosition(state);
                     GridWorldReward r = grid.move(action);
-                    V.put(state, r.getValue() + gamma * V.get(grid.getCurrentPosition()));
-                    biggestChange = Math.max(biggestChange, Math.abs(oldV - V.get(state)));
+                    V.put(state, new GridWorldReward(r.getValue() + gamma * V.get(grid.getCurrentPosition()).getValue()));
+                    biggestChange = Math.max(biggestChange, Math.abs(oldV - V.get(state).getValue()));
                 }
             }
             if (biggestChange < SMALL_ENOUGH) {
