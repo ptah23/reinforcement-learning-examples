@@ -15,7 +15,6 @@ import java.util.Random;
 public class PolicyIteration {
     private static final GridWorldAction[] ALL_POSSIBLE_ACTIONS = GridWorldAction.values();
     private static float SMALL_ENOUGH = 10e-4f, GAMMA = 0.9f;
-    //private static
 
     public static void main(String args[]) {
         Random random = new Random();
