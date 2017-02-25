@@ -56,6 +56,11 @@ public class GridWorldEnvironment {
     public static GridWorldEnvironment negativeGrid() {
         float stepCost = -0.1f;
 
+        GridWorldEnvironment returnValue = negativeGrid(stepCost);
+        return returnValue;
+    }
+
+    public static GridWorldEnvironment negativeGrid(float stepCost) {
         GridWorldEnvironment returnValue = standardGrid();
 
         returnValue.rewards.putAll(

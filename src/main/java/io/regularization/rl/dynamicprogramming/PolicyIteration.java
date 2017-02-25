@@ -28,11 +28,12 @@ public class PolicyIteration {
         }
         System.out.println("initial policy");
         IterativePolicyEvaluation.printPolicy(policy, grid);
+
         boolean isPolicyConverged = false;
         Map<GridWorldPosition, GridWorldReward> V = null;
         while (!isPolicyConverged) {
-            V = IterativePolicyEvaluation.valueFunctionForFixedPolicy(grid, policy, GAMMA);
-            isPolicyConverged = improvePolicy(grid, policy, V);
+            V = IterativePolicyEvaluation.valueFunctionForFixedPolicy(grid, policy, GAMMA, true);
+            isPolicyConverged = improvePolicy(grid, policy, V, true);
         }
         System.out.println("values:");
         IterativePolicyEvaluation.printValues(V, grid);
@@ -40,7 +41,8 @@ public class PolicyIteration {
         IterativePolicyEvaluation.printPolicy(policy, grid);
     }
 
-    private static boolean improvePolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy, Map<GridWorldPosition, GridWorldReward> V) {
+    private static boolean improvePolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy,
+                                         Map<GridWorldPosition, GridWorldReward> V, boolean windy) {
         boolean returnValue = true;
         for (GridWorldPosition state : grid.allStates()) {
             if (policy.containsKey(state)) {
@@ -48,9 +50,13 @@ public class PolicyIteration {
                 float bestValue = Float.NEGATIVE_INFINITY;
                 GridWorldAction newAction = null;
                 for (GridWorldAction action : ALL_POSSIBLE_ACTIONS) {
-                    grid.setCurrentPosition(state);
-                    GridWorldReward reward = grid.move(action);
-                    float v = reward.getValue() + GAMMA * V.get(grid.getCurrentPosition()).getValue();
+                    float v = 0.0f;
+                    if (windy) {
+                        v = IterativePolicyEvaluation.calculateVRandom(grid, GAMMA, V, state, action);
+
+                    } else {
+                        v = IterativePolicyEvaluation.calculateVdeterministic(grid, GAMMA, V, state, action);
+                    }
                     if (v > bestValue) {
                         bestValue = v;
                         newAction = action;
@@ -67,4 +73,5 @@ public class PolicyIteration {
 
         return returnValue;
     }
+
 }

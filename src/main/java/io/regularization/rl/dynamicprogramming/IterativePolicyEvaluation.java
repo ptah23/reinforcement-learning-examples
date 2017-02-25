@@ -17,6 +17,7 @@ import static io.regularization.rl.environment.GridWorldAction.UP;
  * Created by ptah on 23/02/2017.
  */
 public class IterativePolicyEvaluation {
+    private static final GridWorldAction[] ALL_POSSIBLE_ACTIONS = GridWorldAction.values();
     private static float SMALL_ENOUGH = 10e-4f, GAMMA = 0.9f;
     private static Random random = new Random();
 
@@ -65,7 +66,7 @@ public class IterativePolicyEvaluation {
                 .put(new GridWorldPosition(2, 2), RIGHT)
                 .put(new GridWorldPosition(2, 3), UP).build();
         printPolicy(policy, grid);
-        V = valueFunctionForFixedPolicy(grid, policy, GAMMA);
+        V = valueFunctionForFixedPolicy(grid, policy, GAMMA, false);
         printValues(V, grid);
 
     }
@@ -106,7 +107,10 @@ public class IterativePolicyEvaluation {
         return V;
     }
 
-    public static Map<GridWorldPosition, GridWorldReward> valueFunctionForFixedPolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy, float gamma) {
+    public static Map<GridWorldPosition, GridWorldReward> valueFunctionForFixedPolicy(GridWorldEnvironment grid,
+                                                                                      Map<GridWorldPosition,
+                                                                                              GridWorldAction> policy,
+                                                                                      float gamma, boolean windy) {
 
         Map<GridWorldPosition, GridWorldReward> V = initialiseV(grid);
         while (true) {
@@ -116,10 +120,13 @@ public class IterativePolicyEvaluation {
 
                 // V(state) only has value if it's not a terminal state
                 if (policy.containsKey(state)) {
-                    GridWorldAction action = policy.get(state);
-                    grid.setCurrentPosition(state);
-                    GridWorldReward r = grid.move(action);
-                    V.put(state, new GridWorldReward(r.getValue() + gamma * V.get(grid.getCurrentPosition()).getValue()));
+                    float newV = 0.0f;
+                    if (windy) {
+                        newV = calculateVRandom(grid, gamma, V, state, policy.get(state));
+                    } else {
+                        newV = calculateVdeterministic(grid, gamma, V, state, policy.get(state));
+                    }
+                    V.put(state, new GridWorldReward(newV));
                     biggestChange = Math.max(biggestChange, Math.abs(oldV - V.get(state).getValue()));
                 }
             }
@@ -129,6 +136,30 @@ public class IterativePolicyEvaluation {
         }
         return V;
     }
+
+    public static float calculateVdeterministic(GridWorldEnvironment grid, float gamma, Map<GridWorldPosition,
+            GridWorldReward> v, GridWorldPosition state, GridWorldAction action) {
+        grid.setCurrentPosition(state);
+        GridWorldReward r = grid.move(action);
+        return r.getValue() + gamma * v.get(grid.getCurrentPosition()).getValue();
+    }
+
+    public static float calculateVRandom(GridWorldEnvironment grid, float gamma, Map<GridWorldPosition, GridWorldReward> V, GridWorldPosition state, GridWorldAction chosenAction) {
+        float returnValue = 0.0f;
+        for (GridWorldAction resultingAction : ALL_POSSIBLE_ACTIONS) {// resulting action
+            float p = 0.0f;
+            if (chosenAction == resultingAction) {
+                p = 0.5f;
+            } else {
+                p = 0.5f / 3;
+            }
+            grid.setCurrentPosition(state);
+            GridWorldReward reward = grid.move(resultingAction);
+            returnValue += p * (reward.getValue() + gamma * V.get(grid.getCurrentPosition()).getValue());
+        }
+        return returnValue;
+    }
+
 
 
 }
