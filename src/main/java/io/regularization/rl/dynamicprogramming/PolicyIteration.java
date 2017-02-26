@@ -13,7 +13,6 @@ import java.util.Random;
  * Created by ptah on 24/02/2017.
  */
 public class PolicyIteration {
-    private static final GridWorldAction[] ALL_POSSIBLE_ACTIONS = GridWorldAction.values();
     private static float SMALL_ENOUGH = 10e-4f, GAMMA = 0.9f;
 
     public static void main(String args[]) {
@@ -24,7 +23,7 @@ public class PolicyIteration {
         //randomly choose action and update as we learn
         Map<GridWorldPosition, GridWorldAction> policy = Maps.newHashMap();
         for (GridWorldPosition state : grid.getActions().keySet()) {
-            policy.put(state, ALL_POSSIBLE_ACTIONS[random.nextInt(ALL_POSSIBLE_ACTIONS.length)]);
+            policy.put(state, GridWorldAction.values()[random.nextInt(GridWorldAction.values().length)]);
         }
         System.out.println("initial policy");
         IterativePolicyEvaluation.printPolicy(policy, grid);
@@ -34,11 +33,11 @@ public class PolicyIteration {
         while (!isPolicyConverged) {
             V = IterativePolicyEvaluation.valueFunctionForFixedPolicy(grid, policy, GAMMA, true);
             isPolicyConverged = improvePolicy(grid, policy, V, true);
+            System.out.println("values:");
+            IterativePolicyEvaluation.printValues(V, grid);
+            System.out.println("policy:");
+            IterativePolicyEvaluation.printPolicy(policy, grid);
         }
-        System.out.println("values:");
-        IterativePolicyEvaluation.printValues(V, grid);
-        System.out.println("policy:");
-        IterativePolicyEvaluation.printPolicy(policy, grid);
     }
 
     private static boolean improvePolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy,
@@ -49,7 +48,7 @@ public class PolicyIteration {
                 GridWorldAction oldAction = policy.get(state);
                 float bestValue = Float.NEGATIVE_INFINITY;
                 GridWorldAction newAction = null;
-                for (GridWorldAction action : ALL_POSSIBLE_ACTIONS) {
+                for (GridWorldAction action : GridWorldAction.values()) {
                     float v = 0.0f;
                     if (windy) {
                         v = IterativePolicyEvaluation.calculateVRandom(grid, GAMMA, V, state, action);

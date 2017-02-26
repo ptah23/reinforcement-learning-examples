@@ -17,8 +17,7 @@ import static io.regularization.rl.environment.GridWorldAction.UP;
  * Created by ptah on 23/02/2017.
  */
 public class IterativePolicyEvaluation {
-    private static final GridWorldAction[] ALL_POSSIBLE_ACTIONS = GridWorldAction.values();
-    private static float SMALL_ENOUGH = 10e-4f, GAMMA = 0.9f;
+    private static float SMALL_ENOUGH = 10e-2f, GAMMA = 0.9f;
     private static Random random = new Random();
 
     public static void printValues(Map<GridWorldPosition, GridWorldReward> V, GridWorldEnvironment grid) {
@@ -71,7 +70,7 @@ public class IterativePolicyEvaluation {
 
     }
 
-    private static Map<GridWorldPosition, GridWorldReward> initialiseV(GridWorldEnvironment grid) {
+    public static Map<GridWorldPosition, GridWorldReward> initialiseV(GridWorldEnvironment grid) {
         Map<GridWorldPosition, GridWorldReward> V = Maps.newHashMap();
         grid.allStates().stream().forEach(state -> V.put(state, new GridWorldReward(grid.getActions().containsKey(state) ? random.nextFloat() : 0.0f)));
         return V;
@@ -146,7 +145,7 @@ public class IterativePolicyEvaluation {
 
     public static float calculateVRandom(GridWorldEnvironment grid, float gamma, Map<GridWorldPosition, GridWorldReward> V, GridWorldPosition state, GridWorldAction chosenAction) {
         float returnValue = 0.0f;
-        for (GridWorldAction resultingAction : ALL_POSSIBLE_ACTIONS) {// resulting action
+        for (GridWorldAction resultingAction : GridWorldAction.values()) {// resulting action
             float p = 0.0f;
             if (chosenAction == resultingAction) {
                 p = 0.5f;
