@@ -16,13 +16,13 @@ public enum GridWorldAction {
         this.incrementJ = incrementJ;
     }
 
-    public GridWorldPosition perform(GridWorldPosition currentPosition) {
-            return new GridWorldPosition(currentPosition.getI() + incrementI,
+    public GridWorldState perform(GridWorldState currentPosition) {
+        return new GridWorldState(currentPosition.getI() + incrementI,
                     currentPosition.getJ() + incrementJ);
     }
 
-    public GridWorldPosition undo(GridWorldPosition currentPosition) {
-        return new GridWorldPosition(currentPosition.getI() - incrementI,
+    public GridWorldState undo(GridWorldState currentPosition) {
+        return new GridWorldState(currentPosition.getI() - incrementI,
                 currentPosition.getJ() - incrementJ);
     }
 }

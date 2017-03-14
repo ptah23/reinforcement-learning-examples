@@ -3,8 +3,8 @@ package io.regularization.rl.dynamicprogramming;
 import com.google.common.collect.Maps;
 import io.regularization.rl.environment.GridWorldAction;
 import io.regularization.rl.environment.GridWorldEnvironment;
-import io.regularization.rl.environment.GridWorldPosition;
 import io.regularization.rl.environment.GridWorldReward;
+import io.regularization.rl.environment.GridWorldState;
 
 import java.util.Map;
 import java.util.Random;
@@ -21,16 +21,16 @@ public class ValueIteration {
         System.out.println("rewards:");
         IterativePolicyEvaluation.printValues(grid.getRewards(), grid);
         //randomly choose action and update as we learn
-        Map<GridWorldPosition, GridWorldAction> policy = Maps.newHashMap();
-        for (GridWorldPosition state : grid.getActions().keySet()) {
+        Map<GridWorldState, GridWorldAction> policy = Maps.newHashMap();
+        for (GridWorldState state : grid.getActions().keySet()) {
             policy.put(state, GridWorldAction.values()[random.nextInt(GridWorldAction.values().length)]);
         }
         System.out.println("initial policy");
         IterativePolicyEvaluation.printPolicy(policy, grid);
-        Map<GridWorldPosition, GridWorldReward> V = IterativePolicyEvaluation.initialiseV(grid);
+        Map<GridWorldState, GridWorldReward> V = IterativePolicyEvaluation.initialiseV(grid);
         while (true) {
             float biggestChange = 0;
-            for (GridWorldPosition state : grid.allStates()) {
+            for (GridWorldState state : grid.allStates()) {
                 GridWorldReward oldV = V.get(state);
                 if (policy.containsKey(state)) {
                     float newV = Float.NEGATIVE_INFINITY;

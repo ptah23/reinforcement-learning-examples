@@ -4,8 +4,8 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.regularization.rl.environment.GridWorldAction;
 import io.regularization.rl.environment.GridWorldEnvironment;
-import io.regularization.rl.environment.GridWorldPosition;
 import io.regularization.rl.environment.GridWorldReward;
+import io.regularization.rl.environment.GridWorldState;
 
 import java.util.Map;
 import java.util.Random;
@@ -20,11 +20,11 @@ public class IterativePolicyEvaluation {
     private static float SMALL_ENOUGH = 10e-2f, GAMMA = 0.9f;
     private static Random random = new Random();
 
-    public static void printValues(Map<GridWorldPosition, GridWorldReward> V, GridWorldEnvironment grid) {
+    public static void printValues(Map<GridWorldState, GridWorldReward> V, GridWorldEnvironment grid) {
         for (int i = 0; i < grid.getWidth(); i++) {
             System.out.println("---------------------------");
             for (int j = 0; j < grid.getHeight(); j++) {
-                double v = V.get(new GridWorldPosition(i, j)) != null ? V.get(new GridWorldPosition(i, j)).getValue() : 0;
+                double v = V.get(new GridWorldState(i, j)) != null ? V.get(new GridWorldState(i, j)).getValue() : 0;
                 if (v >= 0) {
                     System.out.printf(" %.2f|", v);
                 } else {
@@ -35,12 +35,12 @@ public class IterativePolicyEvaluation {
         }
     }
 
-    public static void printPolicy(Map<GridWorldPosition, GridWorldAction> P, GridWorldEnvironment grid) {
+    public static void printPolicy(Map<GridWorldState, GridWorldAction> P, GridWorldEnvironment grid) {
         System.out.println("Policy:");
         for (int i = 0; i < grid.getWidth(); i++) {
             System.out.println("---------------------------");
             for (int j = 0; j < grid.getHeight(); j++) {
-                GridWorldAction a = P.get(new GridWorldPosition(i, j));
+                GridWorldAction a = P.get(new GridWorldState(i, j));
                 System.out.printf(" %s |", a != null ? a.toString().charAt(0) : " ");
             }
             System.out.print("\n");
@@ -51,37 +51,37 @@ public class IterativePolicyEvaluation {
     public static void main(String args[]) {
         GridWorldEnvironment grid = GridWorldEnvironment.standardGrid();
 
-        Map<GridWorldPosition, GridWorldReward> V = valueFunctionForRandomPolicy(grid);
+        Map<GridWorldState, GridWorldReward> V = valueFunctionForRandomPolicy(grid);
         System.out.println("values for uniformly random actions:");
         printValues(V, grid);
-        Map<GridWorldPosition, GridWorldAction> policy = ImmutableMap.<GridWorldPosition, GridWorldAction>builder()
-                .put(new GridWorldPosition(2, 0), UP)
-                .put(new GridWorldPosition(1, 0), UP)
-                .put(new GridWorldPosition(0, 0), RIGHT)
-                .put(new GridWorldPosition(0, 1), RIGHT)
-                .put(new GridWorldPosition(0, 2), RIGHT)
-                .put(new GridWorldPosition(1, 2), RIGHT)
-                .put(new GridWorldPosition(2, 1), RIGHT)
-                .put(new GridWorldPosition(2, 2), RIGHT)
-                .put(new GridWorldPosition(2, 3), UP).build();
+        Map<GridWorldState, GridWorldAction> policy = ImmutableMap.<GridWorldState, GridWorldAction>builder()
+                .put(new GridWorldState(2, 0), UP)
+                .put(new GridWorldState(1, 0), UP)
+                .put(new GridWorldState(0, 0), RIGHT)
+                .put(new GridWorldState(0, 1), RIGHT)
+                .put(new GridWorldState(0, 2), RIGHT)
+                .put(new GridWorldState(1, 2), RIGHT)
+                .put(new GridWorldState(2, 1), RIGHT)
+                .put(new GridWorldState(2, 2), RIGHT)
+                .put(new GridWorldState(2, 3), UP).build();
         printPolicy(policy, grid);
         V = valueFunctionForFixedPolicy(grid, policy, GAMMA, false);
         printValues(V, grid);
 
     }
 
-    public static Map<GridWorldPosition, GridWorldReward> initialiseV(GridWorldEnvironment grid) {
-        Map<GridWorldPosition, GridWorldReward> V = Maps.newHashMap();
+    public static Map<GridWorldState, GridWorldReward> initialiseV(GridWorldEnvironment grid) {
+        Map<GridWorldState, GridWorldReward> V = Maps.newHashMap();
         grid.allStates().stream().forEach(state -> V.put(state, new GridWorldReward(grid.getActions().containsKey(state) ? random.nextFloat() : 0.0f)));
         return V;
     }
 
-    public static Map<GridWorldPosition, GridWorldReward> valueFunctionForRandomPolicy(GridWorldEnvironment grid) {
+    public static Map<GridWorldState, GridWorldReward> valueFunctionForRandomPolicy(GridWorldEnvironment grid) {
         float gamma = 1.0f;
-        Map<GridWorldPosition, GridWorldReward> V = initialiseV(grid);
+        Map<GridWorldState, GridWorldReward> V = initialiseV(grid);
         while (true) {
             float biggestChange = 0;
-            for (GridWorldPosition state : grid.allStates()) {
+            for (GridWorldState state : grid.allStates()) {
                 float oldV = V.get(state).getValue();
 
                 // V(state) only has value if it's not a terminal state
@@ -106,15 +106,15 @@ public class IterativePolicyEvaluation {
         return V;
     }
 
-    public static Map<GridWorldPosition, GridWorldReward> valueFunctionForFixedPolicy(GridWorldEnvironment grid,
-                                                                                      Map<GridWorldPosition,
+    public static Map<GridWorldState, GridWorldReward> valueFunctionForFixedPolicy(GridWorldEnvironment grid,
+                                                                                   Map<GridWorldState,
                                                                                               GridWorldAction> policy,
-                                                                                      float gamma, boolean windy) {
+                                                                                   float gamma, boolean windy) {
 
-        Map<GridWorldPosition, GridWorldReward> V = initialiseV(grid);
+        Map<GridWorldState, GridWorldReward> V = initialiseV(grid);
         while (true) {
             float biggestChange = 0;
-            for (GridWorldPosition state : grid.allStates()) {
+            for (GridWorldState state : grid.allStates()) {
                 float oldV = V.get(state).getValue();
 
                 // V(state) only has value if it's not a terminal state
@@ -136,14 +136,14 @@ public class IterativePolicyEvaluation {
         return V;
     }
 
-    public static float calculateVdeterministic(GridWorldEnvironment grid, float gamma, Map<GridWorldPosition,
-            GridWorldReward> v, GridWorldPosition state, GridWorldAction action) {
+    public static float calculateVdeterministic(GridWorldEnvironment grid, float gamma, Map<GridWorldState,
+            GridWorldReward> v, GridWorldState state, GridWorldAction action) {
         grid.setCurrentPosition(state);
         GridWorldReward r = grid.move(action);
         return r.getValue() + gamma * v.get(grid.getCurrentPosition()).getValue();
     }
 
-    public static float calculateVRandom(GridWorldEnvironment grid, float gamma, Map<GridWorldPosition, GridWorldReward> V, GridWorldPosition state, GridWorldAction chosenAction) {
+    public static float calculateVRandom(GridWorldEnvironment grid, float gamma, Map<GridWorldState, GridWorldReward> V, GridWorldState state, GridWorldAction chosenAction) {
         float returnValue = 0.0f;
         for (GridWorldAction resultingAction : GridWorldAction.values()) {// resulting action
             float p = 0.0f;

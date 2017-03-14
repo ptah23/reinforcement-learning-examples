@@ -3,8 +3,8 @@ package io.regularization.rl.dynamicprogramming;
 import com.google.common.collect.Maps;
 import io.regularization.rl.environment.GridWorldAction;
 import io.regularization.rl.environment.GridWorldEnvironment;
-import io.regularization.rl.environment.GridWorldPosition;
 import io.regularization.rl.environment.GridWorldReward;
+import io.regularization.rl.environment.GridWorldState;
 
 import java.util.Map;
 import java.util.Random;
@@ -21,15 +21,15 @@ public class PolicyIteration {
         System.out.println("rewards:");
         IterativePolicyEvaluation.printValues(grid.getRewards(), grid);
         //randomly choose action and update as we learn
-        Map<GridWorldPosition, GridWorldAction> policy = Maps.newHashMap();
-        for (GridWorldPosition state : grid.getActions().keySet()) {
+        Map<GridWorldState, GridWorldAction> policy = Maps.newHashMap();
+        for (GridWorldState state : grid.getActions().keySet()) {
             policy.put(state, GridWorldAction.values()[random.nextInt(GridWorldAction.values().length)]);
         }
         System.out.println("initial policy");
         IterativePolicyEvaluation.printPolicy(policy, grid);
 
         boolean isPolicyConverged = false;
-        Map<GridWorldPosition, GridWorldReward> V = null;
+        Map<GridWorldState, GridWorldReward> V = null;
         while (!isPolicyConverged) {
             V = IterativePolicyEvaluation.valueFunctionForFixedPolicy(grid, policy, GAMMA, true);
             isPolicyConverged = improvePolicy(grid, policy, V, true);
@@ -40,10 +40,10 @@ public class PolicyIteration {
         }
     }
 
-    private static boolean improvePolicy(GridWorldEnvironment grid, Map<GridWorldPosition, GridWorldAction> policy,
-                                         Map<GridWorldPosition, GridWorldReward> V, boolean windy) {
+    private static boolean improvePolicy(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy,
+                                         Map<GridWorldState, GridWorldReward> V, boolean windy) {
         boolean returnValue = true;
-        for (GridWorldPosition state : grid.allStates()) {
+        for (GridWorldState state : grid.allStates()) {
             if (policy.containsKey(state)) {
                 GridWorldAction oldAction = policy.get(state);
                 float bestValue = Float.NEGATIVE_INFINITY;

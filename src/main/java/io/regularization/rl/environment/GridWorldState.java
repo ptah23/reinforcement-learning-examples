@@ -7,11 +7,11 @@ import java.util.Objects;
 /**
  * Created by ptah on 22/02/2017.
  */
-public class GridWorldPosition {
+public class GridWorldState {
     private int i;
     private int j;
 
-    public GridWorldPosition(int i, int j) {
+    public GridWorldState(int i, int j) {
         this.i = i;
         this.j = j;
     }
@@ -28,7 +28,7 @@ public class GridWorldPosition {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        GridWorldPosition that = (GridWorldPosition) o;
+        GridWorldState that = (GridWorldState) o;
         return i == that.i &&
                 j == that.j;
     }
