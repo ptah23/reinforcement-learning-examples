@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Created by ptah on 09/03/2017.
  */
-public class MonteCarloControl {
+public class MonteCarloControlNoExploringStarts {
     static Random random = new Random();
     private static float GAMMA = 0.9f;
 
@@ -22,7 +22,7 @@ public class MonteCarloControl {
         //random policy
         Map<GridWorldState, GridWorldAction> policy = new HashMap<>();
         for (GridWorldState current : grid.getActions().keySet()) {
-            policy.put(current, grid.getActions().get(current).get(random.nextInt(grid.getActions().get(current).size())));
+            policy.put(current, randomAction(grid, current));
         }
         System.out.println("random policy:");
         IterativePolicyEvaluation.printPolicy(policy, grid);
@@ -43,12 +43,12 @@ public class MonteCarloControl {
         }
         //repeat until convergence
         List<Float> deltas = new ArrayList<>();
-        for (int t = 0; t < 20000; t++) {
+        for (int t = 0; t < 5000; t++) {
             //if( t % 10 == 0) {
             System.out.println(t);
             //}
             float biggestChange = 0.0f;
-            Map<GridWorldStateAction, GridWorldReward> stateActionsReturns = playGameRandomStart(grid, policy);
+            Map<GridWorldStateAction, GridWorldReward> stateActionsReturns = playGameStart(grid, policy);
             ListIterator<GridWorldStateAction> iterator = new ArrayList(stateActionsReturns.keySet()).listIterator(stateActionsReturns.size());
             Set<GridWorldStateAction> seenStates = new HashSet<>();
             while (iterator.hasPrevious()) {
@@ -97,10 +97,10 @@ public class MonteCarloControl {
         IterativePolicyEvaluation.printValues(V, grid);
     }
 
-    private static Map<GridWorldStateAction, GridWorldReward> playGameRandomStart(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy) {
+    private static Map<GridWorldStateAction, GridWorldReward> playGameStart(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy) {
 
         List<GridWorldState> startStates = new ArrayList<>(grid.getActions().keySet());
-        int startIndex = random.nextInt(startStates.size());
+        int startIndex = 2;
         GridWorldState state = startStates.get(startIndex);
         grid.setCurrentPosition(state);
         LinkedHashMap<GridWorldStateAction, GridWorldReward> returnValue = playGame(grid, policy);
@@ -112,13 +112,18 @@ public class MonteCarloControl {
         GridWorldState state = grid.getCurrentPosition();
         grid.clearSeen();
         LinkedHashMap<GridWorldStateAction, GridWorldReward> statesAndRewards = Maps.newLinkedHashMap();
-        GridWorldAction action = grid.getActions().get(state).get(random.nextInt(grid.getActions().get(state).size()));
-        // statesAndRewards.put(new GridWorldStateAction(state, action), grid.getRewards().get(state));
+        GridWorldAction action = randomAction(grid, state);
+        statesAndRewards.put(new GridWorldStateAction(state, action), grid.getRewards().get(state));
+        action = nextAction(grid, policy, state);
         while (action != null) {
-            action = playRound(grid, policy, random, statesAndRewards);
+            action = playRound(action, grid, policy, statesAndRewards);
         }
         LinkedHashMap<GridWorldStateAction, GridWorldReward> returnValue = calculateG(statesAndRewards);
         return returnValue;
+    }
+
+    private static GridWorldAction randomAction(GridWorldEnvironment grid, GridWorldState state) {
+        return grid.getActions().get(state).get(random.nextInt(grid.getActions().get(state).size()));
     }
 
     public static LinkedHashMap<GridWorldStateAction, GridWorldReward> calculateG(LinkedHashMap<GridWorldStateAction, GridWorldReward> statesAndRewards) {
@@ -138,29 +143,29 @@ public class MonteCarloControl {
         return returnValue;
     }
 
-    public static GridWorldAction playRound(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy, Random random, LinkedHashMap<GridWorldStateAction, GridWorldReward> statesAndRewards) {
-        GridWorldState state = grid.getCurrentPosition();
-        GridWorldAction action = policy.get(state);
-        GridWorldState oldState = grid.getCurrentPosition();
+    public static GridWorldAction playRound(GridWorldAction action, GridWorldEnvironment grid, Map<GridWorldState,
+            GridWorldAction> policy, LinkedHashMap<GridWorldStateAction, GridWorldReward> statesAndRewards) {
         GridWorldReward reward = grid.move(action);
-        state = grid.getCurrentPosition();
-        if (state.equals(oldState)) {
-            reward = new GridWorldReward(-100f);
-            statesAndRewards.put(new GridWorldStateAction(state, null), reward);
-            action = null;
-        } else if (grid.hasSeen(state)) {
-            //cycle
-            reward = new GridWorldReward(-100f);
-            statesAndRewards.put(new GridWorldStateAction(state, null), reward);
-            action = null;
-        } else if (grid.gameOver()) {
+        GridWorldState state = grid.getCurrentPosition();
+        if (grid.gameOver()) {
             statesAndRewards.put(new GridWorldStateAction(state, null), reward);
             action = null;
         } else {
-            action = policy.get(state);
+            action = nextAction(grid, policy, state);
             statesAndRewards.put(new GridWorldStateAction(state, action), reward);
 
         }
         return action;
+    }
+
+    private static GridWorldAction nextAction(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy,
+                                              GridWorldState state) {
+        float eps = 0.1f;
+        float p = random.nextFloat();
+        if (p < (1 - eps)) {
+            return policy.get(state);
+        } else {
+            return randomAction(grid, state);
+        }
     }
 }
