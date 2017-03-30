@@ -158,8 +158,8 @@ public class MonteCarloControlNoExploringStarts {
         return action;
     }
 
-    private static GridWorldAction nextAction(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy,
-                                              GridWorldState state) {
+    public static GridWorldAction nextAction(GridWorldEnvironment grid, Map<GridWorldState, GridWorldAction> policy,
+                                             GridWorldState state) {
         float eps = 0.1f;
         float p = random.nextFloat();
         if (p < (1 - eps)) {
