@@ -3,12 +3,13 @@ package io.regularization.rl.montecarlo;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import io.regularization.rl.approximators.Model;
 import io.regularization.rl.dynamicprogramming.IterativePolicyEvaluation;
 import io.regularization.rl.environment.GridWorldAction;
 import io.regularization.rl.environment.GridWorldEnvironment;
 import io.regularization.rl.environment.GridWorldReward;
 import io.regularization.rl.environment.GridWorldState;
-import org.nd4j.linalg.factory.Nd4j;
+import org.nd4j.linalg.api.ndarray.INDArray;
 
 import java.util.*;
 
@@ -17,9 +18,11 @@ import static io.regularization.rl.environment.GridWorldAction.*;
 /**
  * Created by ptah on 02/03/2017.
  */
-public class MonteCarloPolicyEvaluation {
+
+public class PredictionWithApproximation {
+    private static final float LEARNING_RATE = 0.001f;
     private static float GAMMA = 0.9f;
-    private static boolean windy = true;
+    private static boolean windy = false;
     private static Random random = new Random();
 
 
@@ -48,17 +51,15 @@ public class MonteCarloPolicyEvaluation {
                         .put(new GridWorldState(2, 1), RIGHT)
                         .put(new GridWorldState(2, 2), RIGHT)
                         .put(new GridWorldState(2, 3), UP)
-                .build();
-        Map<GridWorldState, GridWorldReward> V = Maps.newHashMap();
-        Map<GridWorldState, ArrayList<Float>> returns = Maps.newHashMap();
-        for (GridWorldState position : grid.allStates()) {
-            if (grid.getActions().containsKey(position)) {
-                returns.put(position, new ArrayList<>());
-            } else {
-                V.put(position, new GridWorldReward(0.0f));
+                        .build();
+
+        Model model = new Model();
+        float t = 1.0f;
+        for (int it = 0; it < 20000; it++) {
+            if (it % 100 == 0) {
+                t += 0.01f;
             }
-        }
-        for (int t = 0; t < 10000; t++) {
+            float alpha = LEARNING_RATE / t;
             Map<GridWorldState, GridWorldReward> statesAndReturns = playGame(grid, policy);
             Set<GridWorldState> seenStates = Sets.newHashSet();
             ListIterator<GridWorldState> iterator = new ArrayList(statesAndReturns.keySet()).listIterator(
@@ -68,13 +69,19 @@ public class MonteCarloPolicyEvaluation {
 
                 //first-visit evaluation
                 if (!seenStates.contains(key)) {
-                    ArrayList<Float> list = returns.get(key);
-                    list.add(statesAndReturns.get(key).getValue());
-                    V.put(key, new GridWorldReward(
-                            Nd4j.mean(Nd4j.create(list.stream().mapToDouble(f -> f != null ? f : Float.NaN) // Or whatever default you want.
-                                    .toArray())).getFloat(0)));
+                    INDArray grad = model.grad(key).transpose().mul(alpha * (statesAndReturns.get(key).getValue()
+                            - model.predict(key)));
+                    model.setTheta(model.getTheta().add(grad));
                     seenStates.add(key);
                 }
+            }
+        }
+        Map<GridWorldState, GridWorldReward> V = Maps.newHashMap();
+        for (GridWorldState position : grid.allStates()) {
+            if (grid.getActions().containsKey(position)) {
+                V.put(position, new GridWorldReward(model.getTheta().mmul(model.s2x(position)).getFloat(0)));
+            } else {
+                V.put(position, new GridWorldReward(0.0f));
             }
         }
         IterativePolicyEvaluation.printValues(V, grid);

@@ -36,7 +36,7 @@ public class MonteCarloControlTest {
         grid.setCurrentPosition(start);
         LinkedHashMap<GridWorldStateAction, GridWorldReward> statesAndRewards = Maps.newLinkedHashMap();
         statesAndRewards.put(new GridWorldStateAction(start, policy.get(start)), grid.getRewards().get(start));
-        GridWorldAction action = MonteCarloControlExploringStarts.playRound(grid, policy, new Random(), statesAndRewards);
+        GridWorldAction action = ControlExploringStarts.playRound(grid, policy, new Random(), statesAndRewards);
         assertNull(action);
         assertEquals(2, statesAndRewards.size());
         assertEquals(-1.0f, statesAndRewards.get(new GridWorldStateAction(new GridWorldState(1, 3), null)).getValue(), 0.001f);
@@ -44,7 +44,7 @@ public class MonteCarloControlTest {
 
     @Test
     public void calculateG() {
-        //MonteCarloControlExploringStarts.calculateG()
+        //ControlExploringStarts.calculateG()
     }
 
 }

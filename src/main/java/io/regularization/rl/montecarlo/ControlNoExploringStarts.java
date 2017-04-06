@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Created by ptah on 09/03/2017.
  */
-public class MonteCarloControlNoExploringStarts {
+public class ControlNoExploringStarts {
     static Random random = new Random();
     private static float GAMMA = 0.9f;
 
