@@ -53,7 +53,7 @@ public class PredictionWithApproximation {
                         .put(new GridWorldState(2, 3), UP)
                         .build();
 
-        Model model = new Model();
+        Model model = new Model(false);
         float t = 1.0f;
         for (int it = 0; it < 20000; it++) {
             if (it % 100 == 0) {
